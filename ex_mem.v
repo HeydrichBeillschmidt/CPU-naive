@@ -1,6 +1,7 @@
 module EX_MEM(
     input wire clk,
     input wire rst,
+    input wire rdy,
 
     input wire [`StallLevelLen - 1 : 0] stall_command,
 
@@ -29,6 +30,8 @@ always @(posedge clk) begin
         mem_s_data <= `ZeroWord;
         optype_o <= `Type_SB;
         opname_o <= `BEQ;
+    end
+    else if (~rdy) begin
     end
     else if (stall_command != `Stall_All) begin
         mem_rd_addr <= ex_rd_addr;
