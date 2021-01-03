@@ -1,6 +1,7 @@
 module IF_ID(
     input wire clk, 
     input wire rst,
+    input wire rdy,
 
     input wire [`JumpInfoLen - 1 : 0] jp,
     input wire [`StallLevelLen - 1 : 0] stall_command,
@@ -12,7 +13,13 @@ module IF_ID(
 );
     
     always @ (posedge clk) begin
-        if (rst == `Enable || jp[`Jump_EX]==`Enable) begin
+        if (rst == `Enable) begin
+            id_pc <= `ZeroWord;
+            id_inst <= `ZeroWord;
+        end
+        else if (~rdy) begin
+        end
+        else if (jp[`Jump_EX]==`Enable) begin
             id_pc <= `ZeroWord;
             id_inst <= `ZeroWord;
         end
