@@ -1,2 +1,2 @@
 # CPU-naive
-weaker than weaker
+A simple CPU written in verilog with icache only.
