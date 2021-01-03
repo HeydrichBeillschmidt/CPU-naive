@@ -28,6 +28,8 @@ module cpu(
 // - 0x30004 read: read clocks passed since cpu starts (in dword, 4 bytes)
 // - 0x30004 write: indicates program stop (will output '\0' through uart tx)
 
+    wire rdy_sys = rdy_in & ~io_buffer_full;
+
     wire [`StallLevelLen - 1 : 0] stall_cmd_bus;
     wire stall_req_if;
     wire stall_req_id;
@@ -43,6 +45,8 @@ module cpu(
     wire [`RAMAddrLen - 1 : 0] PC_if_id_o;
     wire [`RAMAddrLen - 1 : 0] PC_id_ex_i;
     wire [`RAMAddrLen - 1 : 0] PC_id_ex_o;
+
+    assign dbgreg_dout = PC_pcreg_if;
 
     wire [`RegLen - 1 : 0] memctrl_access_data;
     wire [`MCtrlStatLen - 1 : 0] memctrl_access_stat;
@@ -102,12 +106,12 @@ module cpu(
     wire [`RegAddrLen - 1 : 0] mem_wb_rd_addr_o;
     wire [`RegLen - 1 : 0] mem_wb_rd_v_o;
 
-    PC_REG pc_reg(.clk(clk_in), .rst(rst_in),
+    PC_REG pc_reg(.clk(clk_in), .rst(rst_in), .rdy(rdy_sys),
                   .stall_command(stall_cmd_bus),
                   .jp(jp_info), .JPC(JPC_mux),
                   .PC(PC_pcreg_if));
 
-    IFF iff(.clk(clk_in), .rst(rst_in),
+    IFF iff(.clk(clk_in), .rst(rst_in), .rdy(rdy_sys),
             .FPC(PC_pcreg_if),
             .inst_access_stat(memctrl_access_stat),
             .inst_access_data(memctrl_access_data), .inst_handled_addr(memctrl_handled_addr),
@@ -116,7 +120,7 @@ module cpu(
             .NPC(PC_if_id_i),
             .Inst(raw_inst_i));
     
-    IF_ID if_id(.clk(clk_in), .rst(rst_in),
+    IF_ID if_id(.clk(clk_in), .rst(rst_in), .rdy(rdy_sys),
                 .jp(jp_info),
                 .stall_command(stall_cmd_bus),
                 .if_pc(PC_if_id_i), .if_inst(raw_inst_i),
@@ -137,7 +141,7 @@ module cpu(
           .NPC(PC_id_ex_i),
           .jump_enable(jp_info[`Jump_ID]), .JPC(JPC_id));
 
-    ID_EX id_ex(.clk(clk_in), .rst(rst_in),
+    ID_EX id_ex(.clk(clk_in), .rst(rst_in), .rdy(rdy_sys),
                 .jp(jp_info),
                 .stall_command(stall_cmd_bus),
                 .optype(id_ex_optype_i), .opname(id_ex_opname_i),
@@ -159,7 +163,7 @@ module cpu(
           .optype_o(ex_mem_optype_i), .opname_o(ex_mem_opname_i),
           .jump_enable(jp_info[`Jump_EX]), .JPC(JPC_ex));
 
-    EX_MEM ex_mem(.clk(clk_in), .rst(rst_in),
+    EX_MEM ex_mem(.clk(clk_in), .rst(rst_in), .rdy(rdy_sys),
                   .stall_command(stall_cmd_bus),
                   .optype(ex_mem_optype_i), .opname(ex_mem_opname_i),
                   .ex_rd_addr(ex_mem_rd_addr_i), .ex_rd_data(ex_mem_rd_v_i), .ex_s_data(ex_mem_s_v_i),
@@ -176,18 +180,18 @@ module cpu(
             .stall_request(stall_req_mem),
             .wb_enable(mem_wb_rd_enable_i), .wb_addr(mem_wb_rd_addr_i), .wb_data(mem_wb_rd_v_i));
 
-    MEM_WB mem_wb(.clk(clk_in), .rst(rst_in),
+    MEM_WB mem_wb(.clk(clk_in), .rst(rst_in), .rdy(rdy_sys),
                   .stall_command(stall_cmd_bus),
                   .mem_rd_enable(mem_wb_rd_enable_i), .mem_rd_addr(mem_wb_rd_addr_i), .mem_rd_data(mem_wb_rd_v_i),
                   .wb_rd_enable(mem_wb_rd_enable_o), .wb_rd_addr(mem_wb_rd_addr_o), .wb_rd_data(mem_wb_rd_v_o));
 
-    REGFILE regfile(.clk(clk_in), .rst(rst_in),
+    REGFILE regfile(.clk(clk_in), .rst(rst_in), .rdy(rdy_sys),
                     .read1_enable(id_reg_read1_enable), .read1_addr(id_reg_access1_addr),
                     .read2_enable(id_reg_read2_enable), .read2_addr(id_reg_access2_addr),
                     .write_enable(mem_wb_rd_enable_o), .write_addr(mem_wb_rd_addr_o), .write_data(mem_wb_rd_v_o),
                     .read1_data(id_reg_data1), .read2_data(id_reg_data2));
 
-    MEM_CTRL mem_ctrl(.clk(clk_in), .rst(rst_in),
+    MEM_CTRL mem_ctrl(.clk(clk_in), .rst(rst_in), .rdy(rdy_sys),
                       .ctrl_request_enable_if(if_memctrl_access_enable), .ctrl_request_addr_if(if_memctrl_access_addr),
                       .ctrl_request_enable_mem(mem_memctrl_access_enable), .ctrl_request_addr_mem(mem_memctrl_access_addr),
                       .ctrl_func_sel(mem_memctrl_access_sel), .ctrl_rw_type(mem_memctrl_access_type),
@@ -202,8 +206,7 @@ module cpu(
                   .id_JPC(JPC_id), .ex_JPC(JPC_ex),
                   .JPC(JPC_mux));
 
-    STALL_BUS stall_bus(.rdy_in(rdy_in), .io_buffer_full(io_buffer_full),
-                        .req_if(stall_req_if), .req_id(stall_req_id), .req_mem(stall_req_mem), 
+    STALL_BUS stall_bus(.req_if(stall_req_if), .req_id(stall_req_id), .req_mem(stall_req_mem), 
                         .stall_level(stall_cmd_bus));
 
 endmodule
