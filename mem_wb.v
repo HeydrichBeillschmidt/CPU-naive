@@ -1,6 +1,7 @@
 module MEM_WB(
     input wire clk,
     input wire rst,
+    input wire rdy,
 
     input wire [`StallLevelLen - 1 : 0] stall_command,
 
@@ -16,7 +17,14 @@ module MEM_WB(
 );
 
     always @ (posedge clk) begin
-        if (rst==`Enable || stall_command==`Stall_All) begin
+        if (rst==`Enable) begin
+            wb_rd_enable <= `Disable;
+            wb_rd_addr <= `ZeroRegAddr;
+            wb_rd_data <= `ZeroWord;
+        end
+        else if (~rdy) begin
+        end
+        else if (stall_command==`Stall_All) begin
             wb_rd_enable <= `Disable;
             wb_rd_addr <= `ZeroRegAddr;
             wb_rd_data <= `ZeroWord;
