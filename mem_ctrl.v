@@ -1,6 +1,7 @@
 module MEM_CTRL(
     input wire clk,
     input wire rst,
+    input wire rdy,
 
     // from IF
     input wire ctrl_request_enable_if,
@@ -58,6 +59,8 @@ module MEM_CTRL(
             ram_dout <= `ZeroWord;
             ram_access_dout <= 8'h0;
             ram_access_type <= `Word;
+        end
+        else if (~rdy) begin
         end
         else if (stage == F) begin
             if (ctrl_request_enable_mem == `Enable) begin
