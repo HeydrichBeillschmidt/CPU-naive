@@ -1,6 +1,7 @@
 module REGFILE (
     input wire clk,
     input wire rst,
+    input wire rdy,
     // read1
     input wire read1_enable,
     input wire [`RegAddrLen - 1 : 0] read1_addr,
@@ -27,6 +28,8 @@ module REGFILE (
             for (i = 0; i < `RegNum; i = i + 1) begin
                 regs[i] <= `ZeroWord;
             end
+        end
+        else if (~rdy) begin
         end
         else if (write_enable==`Enable && write_addr!=`ZeroRegAddr)
             regs[write_addr] <= write_data;
