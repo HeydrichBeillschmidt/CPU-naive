@@ -1,6 +1,7 @@
 module ID_EX(
     input wire clk,
     input wire rst,
+    input wire rdy,
 
     input wire [`JumpInfoLen - 1 : 0] jp,
     input wire [`StallLevelLen - 1 : 0] stall_command,
@@ -36,6 +37,8 @@ module ID_EX(
             NPC <= `ZeroWord;
             optype_o <= `Type_I;
             opname_o <= `ADDI;
+        end
+        else if (~rdy) begin
         end
         else if (stall_command==`Stall_All) begin
             optype_o <= optype_o;
