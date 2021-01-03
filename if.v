@@ -2,6 +2,7 @@
 module IFF(
     input wire clk,
     input wire rst,
+    input wire rdy,
     input wire [`RAMAddrLen - 1 : 0] FPC,
 
     // MemCtrl
@@ -40,6 +41,8 @@ module IFF(
                 icache[i][`IValid_Bit] <= 1'b0;
             end
             inst_access_addr <= `ZeroWord;
+        end
+        else if (~rdy) begin
         end
         else begin
             if (inst_access_stat == `IHandled) begin
